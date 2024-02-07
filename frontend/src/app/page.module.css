@@ -1,0 +1,109 @@
+.main{
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.connect{
+  display: block;
+  text-align: center;
+  padding: 20px;
+}
+.name_input{
+  width: 260px;
+  padding: 10px;
+  text-align: center;
+}
+.button{
+  margin: 10px;
+  width: 100px;
+  height: 40px;
+  background-color: #112A46;
+  color: white;
+  cursor: pointer;
+  border-radius: 40px;
+}
+.button:hover{
+  background-color: #112A46EE;
+}
+.page{
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+.connect{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #D6F8D6;
+  height: 100vh;
+  width: 300px;
+}
+.right_div{
+  width: calc(100vw - 300px);
+  
+}
+.navbar{
+  width: 100%;
+  height: 80px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+}
+.top_text{
+  font-size: 36px;
+  font-family: "AnonymousProBold";
+  margin-left: 50px;
+}
+.account_circle{
+  margin-left: auto;
+  margin-right: 50px;
+  cursor: pointer;
+}
+.content{
+  width: 100%;
+  height: calc(100% - 80px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.main_text{
+  font-size: 60px;
+  font-family: "AnonymousProBold";
+  text-align: center;
+  margin-bottom: 20px;
+}
+.intro{
+  max-width: 500px;
+  padding: 20px;
+  text-align: justify;
+}
+.drop_down{
+  position: absolute;
+  right: 0;
+  top: 80px;
+  width: 250px;
+  height: 100px;
+  background-color: white;
+  transition-duration: 100ms;
+}
+.drop_down_content{
+  display: flex;
+  align-items: center;
+}
+.drop_down input{
+  padding: 10px;
+  width: 200px;
+  height: 40px;
+  text-align: center;
+}
+.drop_down img{
+  margin: auto;
+  cursor: pointer;
+}
+.welcome{
+  font-family: "AnonymousProBold";
+  position: absolute;
+  top: 30px;
+}
