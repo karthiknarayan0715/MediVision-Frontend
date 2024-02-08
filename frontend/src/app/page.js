@@ -1,9 +1,12 @@
 "use client"
 
-import Image from "next/image";
-import styles from "./page.module.css";
+import main_page_styles from "./main_page.module.css";
+import room_page_styles from "./room_page.module.css";
+
 import { useEffect, useRef, useState } from "react";
 import useWebSocket from "react-use-websocket"
+import MainPage from "./components/MainPage";
+import RoomPage from "./components/RoomPage";
 
 export default function Home() {
   const placeholderNames = [
@@ -19,14 +22,19 @@ export default function Home() {
     'Vortex Hawk',
   ];
 
+  /*
+      0 - MAIN SCREEN
+      1 - JOINED ROOM
+      2 - LEFT ROOM
+  */
+
   const [Status, SetStatus] = useState(0)
-  const [DropDownOpen, SetDropDownOpen] = useState(false)
-  const [EditName, SetEditName] = useState(false)
+  
   const InitialName = placeholderNames[parseInt(Math.random()*10)]
   const [Name, SetName] = useState()
   const [UserId, SetUserId] = useState(null)
-  const editNameRef = useRef(null)
   const [RoomCode, SetRoomCode] = useState(null)
+  const [Participants, SetParticipants] = useState([])
 
   const socketRef = useRef(null)
 
@@ -45,6 +53,7 @@ export default function Home() {
     socket.addEventListener("message", (event) => {
       // console.log("Message from server ", event.data)
       const message = JSON.parse(event.data)
+      console.log(message)
 
       switch(message.type){
         case "connection_successful":
@@ -55,8 +64,14 @@ export default function Home() {
           console.log("FEEDBACK: "+message.message)
           break;
         case "room_creation_successful":
+        case "room_join_successful":
+
           SetRoomCode(message.roomCode)
-          console.log(message.roomCode)
+          SetParticipants(message.room_data.connections)
+          SetStatus(1)
+          break
+        case "new_member":
+          SetParticipants(message.room_data.connections)
           break
       }
     })
@@ -69,61 +84,11 @@ export default function Home() {
   }
 
   return (
-    <main className={styles.main}>
-      {/* {Status == 0 && */}
-      <div className={styles.page}>
-        <div className={styles.connect}>
-          <div className={styles.welcome}>
-            Hello {Name}
-          </div>
-          <div className={styles.connect_form}>
-            <input className={styles.name_input} type="text" placeholder={'ROOM CODE'} /><br />
-            <input className={styles.button} type="submit" value={"JOIN"} />
-            <input className={styles.button} type="submit" onClick={()=>{
-              sendJsonMessage({type: "createRoom"})
-            }} value={"CREATE"} />
-          </div>
-        </div>
-        <div className={styles.right_div}>
-          <div className={styles.navbar}>
-            <div className={styles.top_text}>Home Page</div>
-            <div className={styles.account_circle} onClick={()=>{
-              SetDropDownOpen(!DropDownOpen)
-            }}><Image alt="user_profile" src={'/icons/account_circle_FILL0_wght400_GRAD0_opsz24.svg'} width={30} height={30} /></div>
-            <div className={styles.drop_down} style={{height: !DropDownOpen ? '0px' : '40px'}}>
-              {
-                DropDownOpen && 
-                <div className={styles.drop_down_content}>
-                  {!EditName ? <input type="text" defaultValue={Name} disabled/> : <input ref={editNameRef} type="text" defaultValue={Name} /> }
-                  <Image onClick={()=>{
-                    if(!EditName)
-                      SetEditName(true)
-                    else{
-                      SetName(editNameRef.current.value)
-                      sendJsonMessage({
-                        type: "editName",
-                        data: {
-                          name: editNameRef.current.value
-                        }
-                      })
-                      SetEditName(false)
-                    }
-                  }} alt="edit" src={'/icons/edit_FILL0_wght400_GRAD0_opsz24.svg'} width={20} height={20} />
-                </div>
-                
-              }
-            </div>
-          </div>
-          <div className={styles.content}>
-            <div className={styles.intro}>
-              <div className={styles.main_text}>MEDIVISION</div>
-              <div className={styles.main_para}>Step into the future of medical education with Medivision! Connect, collaborate, and explore anatomy like never before. Our online platform blends seamless meetings with cutting-edge augmented reality for an immersive learning experience. Dive into 3D models of the human body and organs, making every study session dynamic and engaging. Elevate your medical journey with Medivision – where innovation meets education.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* } */}
+    <main className={main_page_styles.main}>
+      { Status == 0 ?
+        <MainPage styles={main_page_styles} Name={Name} SetName={SetName} sendJsonMessage={sendJsonMessage}/> :
+        <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} UserId={UserId}/>
+      }
     </main>
   );
 }
