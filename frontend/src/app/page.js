@@ -33,7 +33,6 @@ export default function Home() {
   const InitialName = placeholderNames[parseInt(Math.random()*10)]
   const [Name, SetName] = useState()
   const [UserId, SetUserId] = useState(null)
-  const [Jwt, SetJwt] = useState(null)
   const [RoomCode, SetRoomCode] = useState(null)
   const [Participants, SetParticipants] = useState([])
 
@@ -65,11 +64,9 @@ export default function Home() {
           console.log("FEEDBACK: "+message.message)
           break;
         case "room_creation_successful":
-          SetJwt(message.jwt)
         case "room_join_successful":
           SetRoomCode(message.roomCode)
           SetParticipants(message.room_data.connections)
-          SetJwt(message.jwt)
           SetStatus(1)
           break
         case "new_member":
@@ -89,7 +86,7 @@ export default function Home() {
     <main className={main_page_styles.main}>
       { Status == 0 ?
         <MainPage styles={main_page_styles} Name={Name} SetName={SetName} sendJsonMessage={sendJsonMessage}/> :
-        <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} Jwt={Jwt} />
+        <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} Id={UserId} />
       }
     </main>
   );
