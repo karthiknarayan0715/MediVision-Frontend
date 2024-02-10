@@ -1,6 +1,6 @@
 import Image from "next/image"
 
-const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId})=>{
+const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, Jwt})=>{
 
     return (
         <div className={styles.page}>
