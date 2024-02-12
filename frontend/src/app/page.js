@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import useWebSocket from "react-use-websocket"
 import MainPage from "./components/MainPage";
 import RoomPage from "./components/RoomPage";
+import Peer from "peerjs";
 
 export default function Home() {
   const placeholderNames = [
@@ -38,13 +39,14 @@ export default function Home() {
   const [Participants, SetParticipants] = useState([])
 
   const socketRef = useRef(null)
+  const peerRef = useRef(null);
 
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL
 
   useEffect(()=>{
-    SetName(InitialName)
-
-    const socket = new WebSocket(WS_URL+'/?name='+InitialName)
+    const peer = new Peer({host: 'localhost', port: 3002, path: '/peerjs'});
+    peer.on('open', id => {
+      const socket = new WebSocket(WS_URL+'/?name='+InitialName+'&pid='+id)
     // Connection opened
     socket.addEventListener("open", (event) => {
       console.log("CONNECTED TO THE WS SERVER!")
@@ -78,6 +80,19 @@ export default function Home() {
     })
 
     socketRef.current = socket
+  });
+
+    peer.on('error', error => {
+    console.error('PeerJS Error:', error);
+    });
+
+    peerRef.current = peer
+
+    SetName(InitialName)
+    return () => {
+      peerRef.destroy();
+  };
+    
   }, [])
 
   const sendJsonMessage = (message)=>{
@@ -88,7 +103,7 @@ export default function Home() {
     <main className={main_page_styles.main}>
       { Status == 0 ?
         <MainPage styles={main_page_styles} Name={Name} SetName={SetName} sendJsonMessage={sendJsonMessage}/> :
-        <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} Id={UserId} IsAdmin={IsAdmin} />
+        <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} Id={UserId} IsAdmin={IsAdmin} peer={peerRef} />
       }
     </main>
   );

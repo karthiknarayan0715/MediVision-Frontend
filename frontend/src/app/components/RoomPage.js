@@ -1,53 +1,30 @@
 import Image from "next/image"
 import { useRef, useEffect,useState } from "react";
-import Peer from "peerjs";
-import io from 'socket.io-client';
 
-const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAdmin})=>{
+const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAdmin,peer})=>{
 
     const videoRef = useRef();
     let stream = null;
-    const peer = new Peer();
-    const [peerConnections,SetPeerConnections] = useState({})
-    useEffect(() => {
-
-        
-        const socket = io(process.env.NEXT_PUBLIC_STREAM_URL);
-        
-
-            socket.on('userJoined' , id=>{
-                console.log("new user joined")
-                const call  = peer.call(id , stream);
-                call.on('error' , (err)=>{
-                console.log(err)
-                })
-                call.on('close' , ()=>{
-                console.log("user disconect")
-                })
-                let tempConnections = peerConnections
-                tempConnections[call.peer] = call
-                SetPeerConnections(temp)
-            })
-            
-            socket.on('userDisconnect' , id=>{
-                if(peerConnections[id]){
-                peerConnections[id].close();
-                }
-            })
-        
-        
-        
+    const findAdmin = (arr) => {
+        for(let element of arr)
+        {
+            if(element.isHost == true) return element.pId
+        }
+    }
+    
+    useEffect(() => {        
         const enableWebcam = async () => {
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            if(IsAdmin) stream = await navigator.mediaDevices.getUserMedia({ video: true });
             if (videoRef.current) {
             videoRef.current.srcObject = stream;
             }
         } catch (error) {
             console.error('Error accessing webcam:', error);
         }
-
-        peer.on('call' , call=>{
+        
+        peer.current.on('call' , call=>{
+            console.log(call)
             call.answer(stream);
             
             call.on('error' , (err)=>{
@@ -56,59 +33,36 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAd
             call.on("close", () => {
                 console.log('call closed')
             })
-            let tempConnections = peerConnections
-            tempConnections[call.peer] = call
-            SetPeerConnections(temp)
+            
           })
 
         };
 
         const nonAdmin = async () => {
-            peer.on('call' , call=>{
-                call.answer(stream);
-                call.on('stream' , adminStream=>{
-                    console.log("receive stream ")
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = adminStream;
-                        }
-                  })
-                call.on('error' , (err)=>{
-                   console.log(err)
-                })
-                call.on("close", () => {
-                    console.log('call closed')
-                })
-                let tempConnections = peerConnections
-                tempConnections[call.peer] = call
-                SetPeerConnections(temp)
-              })
-        }
+            console.log(findAdmin(Participants))
+            console.log(peer.current.call(findAdmin(Participants) , null))
+            const conn = peer.current.connect(findAdmin(Participants));
+            const call  = peer.current.call(findAdmin(Participants) , null);
+            call.on('error' , (err)=>{
+                console.log(err)
+            })
+            call.on('stream' , adminStream=>{
 
-        
-
-        peer.on('open', id => {
-        console.log('My Peer ID:', id);
-        if(IsAdmin) enableWebcam();
-        else nonAdmin();
-        socket.emit("newUser" , id , RoomCode);
-        });
-
-        peer.on('error', error => {
-        console.error('PeerJS Error:', error);
-        });
+                console.log("receive stream ")
+                if (videoRef.current) {
+                    videoRef.current.srcObject = adminStream;
+                    }
+            })
+            call.on('close' , ()=>{
+                console.log("user disconect")
+            })
+            
+        }        
+        enableWebcam();
+        if(!IsAdmin) nonAdmin();
 
 
-    
-
-    
-
-
-
-    return () => {
-
-        peer.destroy();
-        socket.disconnect();
-        
+    return () => {        
       // Clean up code to stop the webcam stream when component unmounts
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject;
