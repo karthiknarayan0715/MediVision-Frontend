@@ -26,3 +26,13 @@
   justify-content: center;
   align-items: center;
 }
+.main_content{
+  display: flex;
+}
+.video_container{
+  width: calc(100vw - 300px);
+  height: calc(100vh - 80px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -1,144 +1,86 @@
 import Image from "next/image"
 import { useRef, useEffect,useState } from "react";
-import Peer from "peerjs";
-import io from 'socket.io-client';
 
-const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAdmin})=>{
+const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAdmin, peerRef, peerConnections})=>{
 
     const videoRef = useRef();
+    const [streamData, setStreamData] = useState(null)
     let stream = null;
-    const peer = new Peer();
-    const [peerConnections,SetPeerConnections] = useState({})
-    useEffect(() => {
-
-        
-        const socket = io(process.env.NEXT_PUBLIC_STREAM_URL);
-        
-
-            socket.on('userJoined' , id=>{
-                console.log("new user joined")
-                const call  = peer.call(id , stream);
-                call.on('error' , (err)=>{
-                console.log(err)
-                })
-                call.on('close' , ()=>{
-                console.log("user disconect")
-                })
-                let tempConnections = peerConnections
-                tempConnections[call.peer] = call
-                SetPeerConnections(temp)
-            })
-            
-            socket.on('userDisconnect' , id=>{
-                if(peerConnections[id]){
-                peerConnections[id].close();
-                }
-            })
-        
-        
-        
-        const enableWebcam = async () => {
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            }
-        } catch (error) {
-            console.error('Error accessing webcam:', error);
-        }
-
-        peer.on('call' , call=>{
-            call.answer(stream);
-            
-            call.on('error' , (err)=>{
-               console.log(err)
-            })
-            call.on("close", () => {
-                console.log('call closed')
-            })
-            let tempConnections = peerConnections
-            tempConnections[call.peer] = call
-            SetPeerConnections(temp)
-          })
-
-        };
-
-        const nonAdmin = async () => {
-            peer.on('call' , call=>{
-                call.answer(stream);
-                call.on('stream' , adminStream=>{
-                    console.log("receive stream ")
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = adminStream;
-                        }
-                  })
-                call.on('error' , (err)=>{
-                   console.log(err)
-                })
-                call.on("close", () => {
-                    console.log('call closed')
-                })
-                let tempConnections = peerConnections
-                tempConnections[call.peer] = call
-                SetPeerConnections(temp)
-              })
-        }
-
-        
-
-        peer.on('open', id => {
-        console.log('My Peer ID:', id);
-        if(IsAdmin) enableWebcam();
-        else nonAdmin();
-        socket.emit("newUser" , id , RoomCode);
-        });
-
-        peer.on('error', error => {
-        console.error('PeerJS Error:', error);
-        });
-
-
     
+    useEffect(()=>{
+      getUserMedia()
+    }, [])
 
-    
+    const findHost = () => {
+      const hostParticipant = Participants.find((participant) => participant.isHost);
+      return hostParticipant ? hostParticipant.peerId : -1;
+    };
 
-
-
-    return () => {
-
-        peer.destroy();
-        socket.disconnect();
-        
-      // Clean up code to stop the webcam stream when component unmounts
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject;
-        const tracks = stream.getTracks();
-        tracks.forEach(track => track.stop());
+    const getUserMedia = async () => {
+      try {  
+        if (IsAdmin) {
+          const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play();
+          // Host logic
+          peerRef.current.on('call', (call) => {
+            call.answer(mediaStream);
+          });
+        } else {
+          // Participant logic
+          const createEmptyAudioTrack = () => {
+            const ctx = new AudioContext();
+            const oscillator = ctx.createOscillator();
+            const dst = oscillator.connect(ctx.createMediaStreamDestination());
+            oscillator.start();
+            const track = dst.stream.getAudioTracks()[0];
+            return Object.assign(track, { enabled: false });
+          };
+          
+          const createEmptyVideoTrack = ({ width, height }) => {
+            const canvas = Object.assign(document.createElement('canvas'), { width, height });
+            canvas.getContext('2d').fillRect(0, 0, width, height);
+          
+            const stream = canvas.captureStream();
+            const track = stream.getVideoTracks()[0];
+          
+            return Object.assign(track, { enabled: false });
+          };
+          const audioTrack = createEmptyAudioTrack();
+          const videoTrack = createEmptyVideoTrack({ width:640, height:480 });
+          const mediaStream = new MediaStream([audioTrack,videoTrack]);
+          const call = peerRef.current.call(findHost(), mediaStream);
+          call.on('stream', (remoteStream) => {
+            videoRef.current.srcObject = remoteStream;
+            videoRef.current.play();
+          });
+        }
+      } catch (error) {
+        console.error('Error accessing user media:', error);
       }
     };
-  }, []);
     return (
-    <div>
-        <video ref={videoRef} autoPlay playsInline width="640" height="480"></video>
-    </div>
+          <div className={styles.page}>
+          <div className={styles.header}>{RoomCode}</div>
+          <div className={styles.main_content}>
+              <div className={styles.participants}>
+              {
+                  Participants.map((participant, index) => {
+                      console.log(Participants)
+                      return(participant.isHost ? 
+                              <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}<Image alt="ADMIN" src={'/icons/shield_person_FILL0_wght400_GRAD0_opsz24.svg'} width={20} height={20} /></div> :
+                              <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}</div>
+                      )
+                  })
+              }
+              </div>
+              <div className={styles.video_container}>
+                <video ref={videoRef}></video>
+              </div>
+          </div>
+      </div>
     )
 }
 
 export default RoomPage
 
-// <div className={styles.page}>
-//             <div className={styles.header}>{RoomCode}</div>
-//             <div className={styles.main_content}>
-//                 <div className={styles.participants}>
-//                 {
-//                     Participants.map((participant, index) => {
-//                         console.log(Participants)
-//                         return(participant.isHost ? 
-//                                 <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}<Image alt="ADMIN" src={'/icons/shield_person_FILL0_wght400_GRAD0_opsz24.svg'} width={20} height={20} /></div> :
-//                                 <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}</div>
-//                         )
-//                     })
-//                 }
-//                 </div>
-//             </div>
-//         </div>
