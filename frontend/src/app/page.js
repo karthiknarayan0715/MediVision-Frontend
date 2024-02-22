@@ -10,6 +10,8 @@ import RoomPage from "./components/RoomPage";
 
 import Peer from "peerjs";
 
+import { StateProvider } from './components/StateContext';
+
 
 export default function Home() {
   const placeholderNames = [
@@ -100,11 +102,13 @@ export default function Home() {
   }
 
   return (
-    <main className={main_page_styles.main}>
-      { Status == 0 ?
-        <MainPage styles={main_page_styles} Name={Name} SetName={SetName} sendJsonMessage={sendJsonMessage}/> :
-        <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} UserId={UserId} IsAdmin={IsAdmin} peerRef={peerRef} peerConnections={peerConnections} />
-      }
-    </main>
+      <StateProvider>
+        <main className={main_page_styles.main}>
+          { Status == 0 ?
+            <MainPage styles={main_page_styles} Name={Name} SetName={SetName} sendJsonMessage={sendJsonMessage}/> :
+            <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} UserId={UserId} IsAdmin={IsAdmin} peerRef={peerRef} peerConnections={peerConnections} />
+          }
+        </main>
+      </StateProvider>
   );
 }
