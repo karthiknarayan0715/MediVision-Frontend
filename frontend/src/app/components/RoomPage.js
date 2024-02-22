@@ -164,7 +164,7 @@ AFRAME.registerComponent('custom-controls', {
   }
 });
 
-const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAdmin, peerRef})=>{
+const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, UserId, IsAdmin, CanvasStream})=>{
 
     const videoRef = useRef();
     const [entityState, setEntityState] = useState({position: {x: 0, y: 0, z: 0}, rotation: {x: 0, y: 0, z: 0}})
@@ -173,6 +173,31 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAd
     useEffect(()=>{
       getUserMedia()
     }, [])
+
+    useEffect(()=>{
+      if(!CanvasStream) return
+      const canvasData = CanvasStream;
+      function isValidURL(str) {
+        try {
+          new URL(str);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+      // Check if canvasData is a valid URL or base64-encoded data
+      if (isValidURL(canvasData)) {
+        const image = document.createElement("img");
+        image.onload = () => {
+          const ctx = canvasRef.current.getContext('2d');
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(image, 0, 0);
+        };
+        image.src = canvasData;
+      } else {
+        console.error("Invalid canvasData:", canvasData);
+      }
+    }, [CanvasStream])
 
     useEffect(() => {
       const handleUpdateEntityState = (event) => {
@@ -223,7 +248,6 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAd
     }, []);
 
     const startDrawing = ({nativeEvent}) => {
-        if(!IsAdmin) return
         const {offsetX, offsetY} = nativeEvent;
         contextRef.current.beginPath();
         contextRef.current.moveTo(offsetX, offsetY);
@@ -245,16 +269,17 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAd
     };
 
     const stopDrawing = () => {
-      if(peerConnections){
-        Object.keys(peerConnections).forEach((peer) => {
-          const data = {
-            canvasData: canvasRef.current.toDataURL(),
-          };
-          peerConnections[peer].send(JSON.stringify({
-            type: "ctx", data
-          }));
-        });
-      }
+      sendJsonMessage({type: "updateCanvas", data: {canvasData: canvasRef.current.toDataURL(), room_code: RoomCode}})
+      // if(peerConnections){
+      //   Object.keys(peerConnections).forEach((peer) => {
+      //     const data = {
+      //       canvasData: canvasRef.current.toDataURL(),
+      //     };
+      //     peerConnections[peer].send(JSON.stringify({
+      //       type: "ctx", data
+      //     }));
+      //   });
+      // }
       contextRef.current.closePath();
       setIsDrawing(false);
     };
@@ -331,7 +356,6 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, Participants, UserId, IsAd
             if(data.type == "ctx")
             {
               const canvasData = data.data.canvasData;
-              console.log(data)
               function isValidURL(str) {
                 try {
                   new URL(str);

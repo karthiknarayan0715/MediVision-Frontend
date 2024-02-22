@@ -6,6 +6,7 @@ const MainPage = ({styles, Name, SetName, sendJsonMessage}) => {
 
     const [DropDownOpen, SetDropDownOpen] = useState(false)
     const [EditName, SetEditName] = useState(false)
+    const [CanvasStream, SetCanvasStream] = useState(null)
     const editNameRef = useRef(null)
     const roomCodeRef = useRef(null)
 
