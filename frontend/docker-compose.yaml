@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  medivision-frontend:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - ${PORT}:${PORT}
+    restart: always
