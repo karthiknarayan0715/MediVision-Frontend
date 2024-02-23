@@ -234,11 +234,12 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
     const contextRef = useRef(null);
 
     const [isDrawing, setIsDrawing] = useState(false);
+    const [color, setColor] = useState("red")
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        canvas.width = 905;
-        canvas.height = 510;
+        canvas.width = 1057;
+        canvas.height = 595;
 
         const context = canvas.getContext("2d");
         context.lineCap = "round";
@@ -263,6 +264,7 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
         }
         
         const {offsetX, offsetY} = nativeEvent;
+        contextRef.current.strokeStyle = color
         contextRef.current.lineTo(offsetX, offsetY);
         contextRef.current.stroke();
         nativeEvent.preventDefault();
@@ -306,7 +308,7 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
             audio: false,
             video: {
                 width: { min: 1024, ideal: 1920, max: 1920 },
-                height: { min: 576, ideal: 1080, max: 1080 },
+                height: { min: 600, ideal: 1080, max: 1080 },
             }
           };
           const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -390,49 +392,68 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
     };
 
     return (
-          <div className={styles.page}>
-            <div className={styles.header}><div style={{marginRight: '10px'}}>{RoomCode}</div><Image style={{cursor: 'pointer'}} onClick={()=>{navigator.clipboard.writeText(RoomCode);}} src={'icons/content_copy_FILL0_wght400_GRAD0_opsz24.svg'} alt="copy" width={20} height={20} /></div>
-            <div className={styles.main_content}>
-                <div className={styles.video_container}>
-                  <video ref={videoRef} className={styles.ar_video} id="ar-video" width={1000} height={510}></video>
-                  {IsAdmin &&
-                  <div className={styles.admin_controls}>
-                    <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
-                      <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
-                      <a-gltf-model draw-on-model src="/models/male_body.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
-                      <a-camera wasd-controls="enabled: false" custom-controls look-controls="enabled: false" user-controls="enabled: false"></a-camera>
-                    </a-scene>
-                  </div>}
-                  <div className={styles.ar_frame}>
-                    <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
-                      <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
-                      <a-gltf-model draw-on-model src="/models/male_body.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
-                      <a-camera wasd-controls="enabled: false" look-controls="enabled: false" user-controls="enabled: false"></a-camera>
-                    </a-scene>
-                  </div>
+        <div className={styles.page}>
+          <div className={styles.header}>
+            <div className={styles.title}>MediVision</div>
+            <div style={{marginRight: '10px'}}>{RoomCode}</div>
+            <Image style={{cursor: 'pointer', marginRight: '50px'}} onClick={()=>{navigator.clipboard.writeText(RoomCode);}} src={'icons/content_copy_FILL0_wght400_GRAD0_opsz24.svg'} alt="copy" width={20} height={20} />
+          </div>
+          <div style={{display: 'flex'}}>
+          <div className={styles.video_container}>
+            <video ref={videoRef} className={styles.ar_video} id="ar-video" width={1057} height={595}></video>
+            {IsAdmin && 
+            <div className={styles.admin_controls}>
+              <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                <a-gltf-model draw-on-model src="/models/male_body.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                <a-camera wasd-controls="enabled: false" custom-controls look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+              </a-scene>
+            </div>}
+            <div className={styles.ar_frame}>
+              <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                <a-gltf-model draw-on-model src="/models/male_body.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                <a-camera wasd-controls="enabled: false" look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+              </a-scene>
+            </div>
                   
-                  <canvas className={styles.overlay_canvas}
-                    ref={canvasRef}
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}>
-                </canvas>
-                </div>
-                <div className={styles.participants}>
-                {
-                    Participants.map((participant, index) => {
-                        return(participant.isHost ? 
-                                <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}<img alt="ADMIN" src={'/icons/shield_person_FILL0_wght400_GRAD0_opsz24.svg'} width={20} height={20} /></div> :
-                                <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}</div>
-                        )
-                    })
-                }
-                </div>
+            <canvas className={styles.overlay_canvas}
+              ref={canvasRef}
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}>
+          </canvas>
+          </div>
+          <div className={styles.right_window}>
+            <div className={styles.participants}>
+            {
+              Participants.map((participant, index) => {
+                  return(participant.isHost ? 
+                          <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}<img alt="ADMIN" src={'/icons/shield_person_FILL0_wght400_GRAD0_opsz24.svg'} width={20} height={20} /></div> :
+                          <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}</div>
+                  )
+              })
+            }
+            </div>
+            <div className={styles.paint_canvas}>
+              <div className={styles.paint_heading}>PAINT</div>
+              <div className={styles.paint_colors}>
+                <div className={styles.icon} onClick={()=>setColor("red")} style={{backgroundColor: 'red'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("blue")} style={{backgroundColor: 'blue'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("green")} style={{backgroundColor: 'green'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("yellow")} style={{backgroundColor: 'yellow'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("orange")} style={{backgroundColor: 'orange'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("pink")} style={{backgroundColor: 'pink'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("violet")} style={{backgroundColor: 'violet'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("indigo")} style={{backgroundColor: 'indigo'}}></div>
+                <div className={styles.icon} onClick={()=>setColor("magenta")} style={{backgroundColor: 'magenta'}}></div>
+              </div>
             </div>
           </div>
+          </div>
+        </div>
     )
 }
 
 export default RoomPage
-

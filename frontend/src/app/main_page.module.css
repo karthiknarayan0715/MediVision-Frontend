@@ -5,44 +5,89 @@
   justify-content: center;
   align-items: center;
 }
+.center{
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+}
 .connect{
-  display: block;
+  width: 75vw;
+  height: 300px;
+  background-color: #3184a3;
+  border-radius: 50px;
+  display: flex;
+}
+.user_data{
+  width: calc(75vw - 350px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.user_name{
+  width: 90%;
+  font-size: 15px;
+  color: white;
+  margin-right: 10px;
+}
+.user_field{
+  width: 90%;
+  font-size: 15px;
+  background-color: #00000000;
+  color: white;
+  padding: 5px;
+  border-bottom: 1px solid black;
+}
+.connect_button{
+  width: 100px;
+  height: 40px;
+  background-color: rgb(26, 26, 59);
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+.connect_button:hover{
+  background-color: rgb(26, 26, 59, 0.9);
+}
+.room_code{
+  width: 150px;
+  height: 40px;
+  font-size: 24px;
   text-align: center;
-  padding: 20px;
+  background-color: white;
+  color: black;
+}
+.image_container{
+  width: 350px;
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .name_input{
   width: 260px;
   padding: 10px;
   text-align: center;
 }
-.button{
-  margin: 10px;
-  width: 100px;
-  height: 40px;
-  background-color: #112A46;
-  color: white;
-  cursor: pointer;
-  border-radius: 40px;
-}
-.button:hover{
-  background-color: #112A46EE;
-}
-.page{
-  display: flex;
+.title{
+  height: 200px;
   width: 100vw;
-  height: 100vh;
-}
-.connect{
   display: flex;
-  align-items: center;
   justify-content: center;
-  background-color: #D6F8D6;
-  height: 100vh;
-  width: 300px;
+  align-items: center;
 }
-.right_div{
-  width: calc(100vw - 300px);
-  
+.title_cont{
+  text-align: center;
+}
+.catchphrase{
+  text-align: center;
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 20px;
 }
 .navbar{
   width: 100%;
@@ -56,54 +101,7 @@
   font-family: "AnonymousProBold";
   margin-left: 50px;
 }
-.account_circle{
-  margin-left: auto;
-  margin-right: 50px;
-  cursor: pointer;
-}
-.content{
-  width: 100%;
-  height: calc(100% - 80px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.main_text{
-  font-size: 60px;
-  font-family: "AnonymousProBold";
-  text-align: center;
-  margin-bottom: 20px;
-}
-.intro{
-  max-width: 500px;
-  padding: 20px;
-  text-align: justify;
-}
-.drop_down{
-  position: absolute;
-  right: 0;
-  top: 80px;
-  width: 250px;
-  height: 100px;
-  background-color: white;
-  transition-duration: 100ms;
-}
-.drop_down_content{
-  display: flex;
-  align-items: center;
-}
-.drop_down input{
-  padding: 10px;
-  width: 200px;
-  height: 40px;
-  text-align: center;
-}
-.drop_down img{
-  margin: auto;
-  cursor: pointer;
-}
-.welcome{
-  font-family: "AnonymousProBold";
-  position: absolute;
-  top: 30px;
+.page{
+  width: 100vw;
+  height: 100vh;
 }
