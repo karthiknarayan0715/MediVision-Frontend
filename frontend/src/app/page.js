@@ -49,6 +49,8 @@ export default function Home() {
   const [peerConnections, SetPeerConnections] = useState([])
   const [CanvasStream, SetCanvasStream] = useState(null)
 
+  const [Messages, SetMessages] = useState([])
+
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL
 
   useEffect(()=>{
@@ -91,6 +93,9 @@ export default function Home() {
           case "update_canvas": 
             SetCanvasStream(message.canvas_data)
             break
+          case "new_message":
+            SetMessages(prevMessages => [...prevMessages, {sender: message.sender, message: message.message}]);
+
         }
       })
 
@@ -108,7 +113,7 @@ export default function Home() {
         <main className={main_page_styles.main}>
           { Status == 0 ?
             <MainPage styles={main_page_styles} Name={Name} SetName={SetName} sendJsonMessage={sendJsonMessage}/> :
-            <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} UserId={UserId} IsAdmin={IsAdmin} peerRef={peerRef} peerConnections={peerConnections} CanvasStream={CanvasStream} />
+            <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} Name={Name} IsAdmin={IsAdmin} peerRef={peerRef} peerConnections={peerConnections} CanvasStream={CanvasStream} Messages={Messages} />
           }
         </main>
       </StateProvider>

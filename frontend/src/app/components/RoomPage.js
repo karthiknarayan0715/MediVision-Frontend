@@ -164,7 +164,7 @@ AFRAME.registerComponent('custom-controls', {
   }
 });
 
-const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, UserId, IsAdmin, CanvasStream})=>{
+const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Name, IsAdmin, CanvasStream, Messages})=>{
 
     const videoRef = useRef();
     const [entityState, setEntityState] = useState({position: {x: 0, y: 0, z: 0}, rotation: {x: 0, y: 0, z: 0}})
@@ -233,6 +233,7 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
 
+    const [canDraw, SetCanDraw] = useState(false)
     const [isDrawing, setIsDrawing] = useState(false);
     const [color, setColor] = useState("red")
 
@@ -252,14 +253,14 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
         const {offsetX, offsetY} = nativeEvent;
         contextRef.current.beginPath();
         contextRef.current.moveTo(offsetX, offsetY);
-        contextRef.current.lineTo(offsetX, offsetY);
-        contextRef.current.stroke();
+        // contextRef.current.lineTo(offsetX, offsetY);
+        // contextRef.current.stroke();
         setIsDrawing(true);
         nativeEvent.preventDefault();
     };
 
     const draw = ({nativeEvent}) => {
-        if(!isDrawing) {
+        if(!isDrawing || !canDraw) {
             return;
         }
         
@@ -271,35 +272,26 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
     };
 
     const stopDrawing = () => {
-      sendJsonMessage({type: "updateCanvas", data: {canvasData: canvasRef.current.toDataURL(), room_code: RoomCode}})
-      // if(peerConnections){
-      //   Object.keys(peerConnections).forEach((peer) => {
-      //     const data = {
-      //       canvasData: canvasRef.current.toDataURL(),
-      //     };
-      //     peerConnections[peer].send(JSON.stringify({
-      //       type: "ctx", data
-      //     }));
-      //   });
-      // }
       contextRef.current.closePath();
       setIsDrawing(false);
+      SendCanvasData()
     };
 
-    const setToDraw = () => {
-        contextRef.current.globalCompositeOperation = 'source-over';
-    };
+    const SendCanvasData = ()=>{
+      sendJsonMessage({type: "updateCanvas", data: {canvasData: canvasRef.current.toDataURL(), room_code: RoomCode}})
+    }
 
-    const setToErase = () => {
-        contextRef.current.globalCompositeOperation = 'destination-out';
-    };
+    const clearCanvas = ()=>{
+      contextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      SendCanvasData()
+    }
 
-    const saveImageToLocal = (event) => {
-        let link = event.currentTarget;
-        link.setAttribute('download', 'canvas.png');
-        let image = canvasRef.current.toDataURL('image/png');
-        link.setAttribute('href', image);
-    };
+    const MessageRef = useRef(null)
+
+    const sendMessage = ()=>{
+      if(!MessageRef.current.value || MessageRef.current.value <= 3) return
+      sendJsonMessage({type: 'chatMessage', data: {room_code: RoomCode, sender: Name, message: MessageRef.current.value}})
+    }
 
     const getUserMedia = async () => {
       try {  
@@ -426,29 +418,45 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
           </canvas>
           </div>
           <div className={styles.right_window}>
-            <div className={styles.participants}>
-            {
-              Participants.map((participant, index) => {
-                  return(participant.isHost ? 
-                          <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}<img alt="ADMIN" src={'/icons/shield_person_FILL0_wght400_GRAD0_opsz24.svg'} width={20} height={20} /></div> :
-                          <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}</div>
+            <div className={styles.chat}>
+              <div className={styles.chat_messages}>
+              {Messages &&
+                Messages.map((message)=>{
+                  return (
+                    <div>
+                      <div style={{fontWeight: 'bold'}}>{message.sender}: </div>
+                      <div>{message.message}</div>
+                    </div>
                   )
-              })
-            }
+                })
+              }
+              </div>
+              <div className={styles.chat_message}>
+                <input ref={MessageRef} />
+                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}} onClick={()=>{sendMessage()}}><Image src={'/icons/send_FILL0_wght400_GRAD0_opsz24.svg'} alt="SEND" width={40} height={40} /></div>
+              </div>
             </div>
             <div className={styles.paint_canvas}>
               <div className={styles.paint_heading}>PAINT</div>
-              <div className={styles.paint_colors}>
-                <div className={styles.icon} onClick={()=>setColor("red")} style={{backgroundColor: 'red'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("blue")} style={{backgroundColor: 'blue'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("green")} style={{backgroundColor: 'green'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("yellow")} style={{backgroundColor: 'yellow'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("orange")} style={{backgroundColor: 'orange'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("pink")} style={{backgroundColor: 'pink'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("violet")} style={{backgroundColor: 'violet'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("indigo")} style={{backgroundColor: 'indigo'}}></div>
-                <div className={styles.icon} onClick={()=>setColor("magenta")} style={{backgroundColor: 'magenta'}}></div>
-              </div>
+              <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                <div>
+                  <div style={{display: 'flex', justifyContent: 'center'}}>
+                    <div className={styles.pen} onClick={()=>{SetCanDraw(!canDraw)}}><Image alt="PEN" style={{'filter': canDraw ? 'invert(1)' : 'invert(0)'}} src={'/icons/draw_FILL0_wght400_GRAD0_opsz24.svg'} width={40} height={40} /></div>
+                    <div className={styles.pen}><Image src={'/icons/ink_eraser_FILL0_wght400_GRAD0_opsz24.svg'} onClick={()=>{clearCanvas()}} alt="ERASE" width={40} height={40} /></div>
+                  </div>
+                  <div className={styles.paint_colors}>
+                    <div className={styles.icon} onClick={()=>setColor("red")} style={{backgroundColor: 'red'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("blue")} style={{backgroundColor: 'blue'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("green")} style={{backgroundColor: 'green'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("yellow")} style={{backgroundColor: 'yellow'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("orange")} style={{backgroundColor: 'orange'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("pink")} style={{backgroundColor: 'pink'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("violet")} style={{backgroundColor: 'violet'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("indigo")} style={{backgroundColor: 'indigo'}}></div>
+                    <div className={styles.icon} onClick={()=>setColor("magenta")} style={{backgroundColor: 'magenta'}}></div>
+                  </div>
+                </div>
+            </div>
             </div>
           </div>
           </div>
@@ -457,3 +465,15 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Use
 }
 
 export default RoomPage
+
+
+{/* <div className={styles.participants}>
+            {
+              Participants.map((participant, index) => {
+                  return(participant.isHost ? 
+                          <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}<img alt="ADMIN" src={'/icons/shield_person_FILL0_wght400_GRAD0_opsz24.svg'} width={20} height={20} /></div> :
+                          <div key={index} className={styles.participant}>{participant.connectionId !== UserId ? <p>{participant.name}</p> : <p><b>{participant.name}</b></p>}</div>
+                  )
+              })
+            }
+            </div> */}
