@@ -164,7 +164,7 @@ AFRAME.registerComponent('custom-controls', {
   }
 });
 
-const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Name, IsAdmin, CanvasStream, Messages})=>{
+const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Name, IsAdmin, CanvasStream, Messages, Model})=>{
 
     const videoRef = useRef();
     const [entityState, setEntityState] = useState({position: {x: 0, y: 0, z: 0}, rotation: {x: 0, y: 0, z: 0}})
@@ -218,6 +218,7 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Nam
     }, []);
   
     useEffect(()=>{
+      console.log(entityState)
       Object.keys(peerConnections).forEach(peer => {
         if(peerConnections[peer].open){
           peerConnections[peer].send(JSON.stringify({type: "state", entityState: entityState}))
@@ -291,6 +292,7 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Nam
     const sendMessage = ()=>{
       if(!MessageRef.current.value || MessageRef.current.value <= 3) return
       sendJsonMessage({type: 'chatMessage', data: {room_code: RoomCode, sender: Name, message: MessageRef.current.value}})
+      MessageRef.current.value = "";
     }
 
     const getUserMedia = async () => {
@@ -345,6 +347,7 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Nam
           })
           hostConnection.on('data', (unparseData)=>{
             const data = JSON.parse(unparseData)
+            console.log(data)
             if(data.type == "state")
               setEntityState(data.entityState)
             if(data.type == "ctx")
@@ -387,78 +390,144 @@ const RoomPage = ({styles, sendJsonMessage, RoomCode, peerRef, Participants, Nam
         <div className={styles.page}>
           <div className={styles.header}>
             <div className={styles.title}>MediVision</div>
+            <div className={styles.select}>
+              {IsAdmin &&
+              <select onChange={(e)=>{
+                sendJsonMessage({type: "changeModel", data: {room_code: RoomCode, model: e.target.value}})
+              }} style={{margin: 'auto', width: '100px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                <option name="body">Body</option>
+                <option>Eye</option>
+                <option>Brain</option>
+                <option>Heart</option>
+              </select>
+              }
+            </div>
             <div style={{marginRight: '10px'}}>{RoomCode}</div>
             <Image style={{cursor: 'pointer', marginRight: '50px'}} onClick={()=>{navigator.clipboard.writeText(RoomCode);}} src={'icons/content_copy_FILL0_wght400_GRAD0_opsz24.svg'} alt="copy" width={20} height={20} />
           </div>
-          <div style={{display: 'flex'}}>
-          <div className={styles.video_container}>
-            <video ref={videoRef} className={styles.ar_video} id="ar-video" width={1057} height={595}></video>
-            {IsAdmin && 
-            <div className={styles.admin_controls}>
-              <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
-                <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
-                <a-gltf-model draw-on-model src="/models/male_body.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
-                <a-camera wasd-controls="enabled: false" custom-controls look-controls="enabled: false" user-controls="enabled: false"></a-camera>
-              </a-scene>
-            </div>}
-            <div className={styles.ar_frame}>
-              <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
-                <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
-                <a-gltf-model draw-on-model src="/models/male_body.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
-                <a-camera wasd-controls="enabled: false" look-controls="enabled: false" user-controls="enabled: false"></a-camera>
-              </a-scene>
-            </div>
-                  
-            <canvas className={styles.overlay_canvas}
-              ref={canvasRef}
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}>
-          </canvas>
-          </div>
-          <div className={styles.right_window}>
-            <div className={styles.chat}>
-              <div className={styles.chat_messages}>
-              {Messages &&
-                Messages.map((message)=>{
-                  return (
-                    <div>
-                      <div style={{fontWeight: 'bold'}}>{message.sender}: </div>
-                      <div>{message.message}</div>
-                    </div>
-                  )
-                })
-              }
-              </div>
-              <div className={styles.chat_message}>
-                <input ref={MessageRef} />
-                <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}} onClick={()=>{sendMessage()}}><Image src={'/icons/send_FILL0_wght400_GRAD0_opsz24.svg'} alt="SEND" width={40} height={40} /></div>
-              </div>
-            </div>
-            <div className={styles.paint_canvas}>
-              <div className={styles.paint_heading}>PAINT</div>
-              <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                <div>
-                  <div style={{display: 'flex', justifyContent: 'center'}}>
-                    <div className={styles.pen} onClick={()=>{SetCanDraw(!canDraw)}}><Image alt="PEN" style={{'filter': canDraw ? 'invert(1)' : 'invert(0)'}} src={'/icons/draw_FILL0_wght400_GRAD0_opsz24.svg'} width={40} height={40} /></div>
-                    <div className={styles.pen}><Image src={'/icons/ink_eraser_FILL0_wght400_GRAD0_opsz24.svg'} onClick={()=>{clearCanvas()}} alt="ERASE" width={40} height={40} /></div>
-                  </div>
-                  <div className={styles.paint_colors}>
-                    <div className={styles.icon} onClick={()=>setColor("red")} style={{backgroundColor: 'red'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("blue")} style={{backgroundColor: 'blue'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("green")} style={{backgroundColor: 'green'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("yellow")} style={{backgroundColor: 'yellow'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("orange")} style={{backgroundColor: 'orange'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("pink")} style={{backgroundColor: 'pink'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("violet")} style={{backgroundColor: 'violet'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("indigo")} style={{backgroundColor: 'indigo'}}></div>
-                    <div className={styles.icon} onClick={()=>setColor("magenta")} style={{backgroundColor: 'magenta'}}></div>
-                  </div>
+          <div className={styles.flex_main}>
+            <div className={styles.video_container}>
+              <video ref={videoRef} className={styles.ar_video} id="ar-video" width={1057} height={595}></video>
+              {Model == "Eye" ?
+              <>
+                {IsAdmin && 
+                <div className={styles.admin_controls}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/eye.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" custom-controls look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
+                </div>}
+                <div className={styles.ar_frame}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/eye.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
                 </div>
+                </> : Model == "Body" ?
+                <>
+                {IsAdmin && 
+                  <div className={styles.admin_controls}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/human.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" custom-controls look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
+                </div>}
+                <div className={styles.ar_frame}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/human.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
+                </div>
+                </> : Model == "Brain" ? 
+                <>
+                {IsAdmin && 
+                  <div className={styles.admin_controls}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/brain.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" custom-controls look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
+                </div>}
+                <div className={styles.ar_frame}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/brain.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
+                </div>
+                </> : Model == "Heart" && 
+                <>
+                {IsAdmin && 
+                  <div className={styles.admin_controls}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/heart.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" custom-controls look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
+                </div>}
+                <div className={styles.ar_frame}>
+                  <a-scene embedded keyboard-shortcuts="enterVR: false" arjs="sourceType: 'webcam'; detectionMode: 'mono_and_matrix'; matrixCodeType: '3x3';">
+                    <a-entity light="type: directional; color: #FFF; intensity: 1" position="-0.5 1 1"></a-entity>
+                    <a-gltf-model draw-on-model src="/models/heart.glb" scale="1 1 1" position={`${-entityState.position.x} ${-entityState.position.y} ${-entityState.position.z}`} rotation={`${entityState.rotation.x} ${entityState.rotation.y} ${entityState.rotation.z}`}></a-gltf-model>
+                    <a-camera wasd-controls="enabled: false" look-controls="enabled: false" user-controls="enabled: false"></a-camera>
+                  </a-scene>
+                </div>
+                </>            
+              }
+              <canvas className={styles.overlay_canvas}
+                ref={canvasRef}
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseLeave={stopDrawing}>
+            </canvas>
             </div>
+            <div className={styles.right_window}>
+              <div className={styles.chat}>
+                <div className={styles.chat_messages}>
+                {Messages &&
+                  Messages.map((message)=>{
+                    return (
+                      <div>
+                        <div style={{fontWeight: 'bold'}}>{message.sender}: </div>
+                        <div>{message.message}</div>
+                      </div>
+                    )
+                  })
+                }
+                </div>
+                <div className={styles.chat_message}>
+                  <input ref={MessageRef} />
+                  <div className={styles.send_button} onClick={()=>{sendMessage()}}><Image src={'/icons/send_FILL0_wght400_GRAD0_opsz24.svg'} alt="SEND" width={40} height={40} /></div>
+                </div>
+              </div>
+              <div className={styles.paint_canvas}>
+                <div className={styles.paint_heading}>PAINT</div>
+                <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                  <div>
+                    <div style={{display: 'flex', justifyContent: 'center'}}>
+                      <div className={styles.pen} onClick={()=>{SetCanDraw(!canDraw)}}><Image alt="PEN" style={{'filter': canDraw ? 'invert(1)' : 'invert(0)'}} src={'/icons/draw_FILL0_wght400_GRAD0_opsz24.svg'} width={40} height={40} /></div>
+                      <div className={styles.pen}><Image src={'/icons/ink_eraser_FILL0_wght400_GRAD0_opsz24.svg'} onClick={()=>{clearCanvas()}} alt="ERASE" width={40} height={40} /></div>
+                    </div>
+                    <div className={styles.paint_colors}>
+                      <div className={styles.icon} onClick={()=>setColor("red")} style={{backgroundColor: 'red'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("blue")} style={{backgroundColor: 'blue'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("green")} style={{backgroundColor: 'green'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("yellow")} style={{backgroundColor: 'yellow'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("orange")} style={{backgroundColor: 'orange'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("pink")} style={{backgroundColor: 'pink'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("violet")} style={{backgroundColor: 'violet'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("indigo")} style={{backgroundColor: 'indigo'}}></div>
+                      <div className={styles.icon} onClick={()=>setColor("magenta")} style={{backgroundColor: 'magenta'}}></div>
+                    </div>
+                  </div>
+              </div>
+              </div>
             </div>
-          </div>
           </div>
         </div>
     )

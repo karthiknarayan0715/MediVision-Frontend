@@ -50,6 +50,7 @@ export default function Home() {
   const [CanvasStream, SetCanvasStream] = useState(null)
 
   const [Messages, SetMessages] = useState([])
+  const [Model, SetModel] = useState("Body")
 
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL
 
@@ -68,6 +69,7 @@ export default function Home() {
       // Listen for messages
       socket.addEventListener("message", (event) => {
         const message = JSON.parse(event.data)
+        console.log(message)
         switch(message.type){
           case "connection_successful":
             SetUserId(message.data.user_id)
@@ -80,6 +82,7 @@ export default function Home() {
             SetIsAdmin(true);
           case "room_join_successful":
             SetRoomCode(message.roomCode)
+            SetModel(message.room_data.model)
             SetParticipants(message.room_data.connections)
             SetStatus(1)
             break
@@ -95,7 +98,10 @@ export default function Home() {
             break
           case "new_message":
             SetMessages(prevMessages => [...prevMessages, {sender: message.sender, message: message.message}]);
-
+            break
+          case "change_model":
+            SetModel(message.model)
+            break
         }
       })
 
@@ -113,7 +119,7 @@ export default function Home() {
         <main className={main_page_styles.main}>
           { Status == 0 ?
             <MainPage styles={main_page_styles} Name={Name} SetName={SetName} sendJsonMessage={sendJsonMessage}/> :
-            <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} Name={Name} IsAdmin={IsAdmin} peerRef={peerRef} peerConnections={peerConnections} CanvasStream={CanvasStream} Messages={Messages} />
+            <RoomPage styles={room_page_styles} sendJsonMessage={sendJsonMessage} RoomCode={RoomCode} Participants={Participants} Name={Name} IsAdmin={IsAdmin} peerRef={peerRef} peerConnections={peerConnections} CanvasStream={CanvasStream} Messages={Messages} Model={Model} />
           }
         </main>
       </StateProvider>

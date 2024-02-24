@@ -1,6 +1,7 @@
 .page{
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
 }
 .header{
   width: 100vw;
@@ -23,13 +24,16 @@
 
 .right_window{
   width: calc(100vw - 1057px);
+  margin-right: auto;
 }
 .paint_canvas{
   width: calc(100vw - 1057px);
   height: calc(595px / 2);
   background-color: #3184a3;
 }
-
+.flex_main{
+  display: flex;
+}
 .paint_heading{
   text-align: center;
   font-size: 24px;
@@ -45,7 +49,7 @@
 }
 .video_container{
   position: relative;
-  width: 100vw;
+  width: 1057px;
   height: calc(100vh - 160px);
 }
 .ar_video{
@@ -71,7 +75,6 @@
 }
 .overlay_canvas{
   position: absolute;
-  background-color: rgba(255, 0, 0, 0.089);
   width: 1057px;
   height: 595px;
   z-index: 3;
@@ -100,16 +103,32 @@
 .chat_messages{
   height: calc(595px / 2 - 50px);
   overflow-y: scroll;
+  scrollbar-width: 0px;
 }
 .chat_message{
   display: flex;
-  height: 50px;
-  width: 80%;
+  height: 40px;
+  width: 100%;
 }
 .chat_message input{
-  width: 80%;
+  width: 100%;
 }
-
+.send_button{
+  background-color: rgb(26, 26, 59);
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.send_button:hover{
+  background-color: rgba(26, 26, 59, 0.8);
+}
+.send_button img{
+  filter: invert(1);
+}
+.select{
+  margin-right: 30px;
+}
 /* .participant{
   width: 100%;
   height: 80px;
